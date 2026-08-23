@@ -8,4 +8,9 @@
 .signup-button{margin-top:8px!important;background:transparent!important;border:1px solid var(--line)!important;color:var(--muted)!important}
 .signup-button:hover{border-color:var(--green)!important;color:var(--text)!important}
 .login-form button:disabled{cursor:wait;opacity:.6}
-
+.api-settings{margin-left:auto;border:1px solid var(--line);background:transparent;color:var(--green);padding:8px 10px;font:.65rem var(--font-geist-mono)}
+.agent-switcher{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:9px 12px;border-bottom:1px solid var(--line-soft);background:#090d12}
+.agent-switcher button{min-height:40px;border:1px solid var(--line);background:#101720;color:var(--muted);font-size:.72rem}.agent-switcher button span{margin-right:6px;color:var(--green);font-family:var(--font-geist-mono)}
+.agent-switcher button.active{border-color:var(--green);background:var(--green-soft);color:var(--text);box-shadow:inset 0 -2px 0 var(--green)}
+.api-modal{max-height:min(90svh,680px);overflow:auto}.api-modal label{display:block;margin:14px 0 7px;color:#bdc8d1;font-size:.78rem}.api-modal input{width:100%;height:46px;border:1px solid var(--line);background:#080b0f;color:var(--text);padding:0 12px;outline:0}.api-modal input:focus{border-color:var(--green)}.api-mark{border-color:var(--green);color:var(--green)}.api-modal .save-api{border-color:var(--blue);background:var(--blue);color:#fff}
+@media(max-width:520px){.agent-switcher button{font-size:.62rem}.api-settings{font-size:0;width:38px;height:38px}.api-settings:after{content:'⚙';font-size:1rem}}
