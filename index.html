@@ -88,11 +88,11 @@
   <div id="api-modal" class="modal-backdrop" role="presentation" hidden>
     <section class="confirm-modal api-modal" role="dialog" aria-modal="true" aria-labelledby="api-title">
       <div class="warning-mark api-mark" aria-hidden="true">↗</div><p class="eyebrow">Conexão segura</p><h2 id="api-title">Configurar provedor</h2>
-      <p>A chave fica apenas na memória desta aba. Ao fechar ou atualizar, será necessário informá-la novamente.</p>
-      <label for="api-endpoint">Endpoint compatível com OpenAI</label>
+      <p>Cada agente mantém endpoint, modelo e chave próprios durante esta sessão do navegador.</p>
+      <label id="api-endpoint-label" for="api-endpoint">Endpoint compatível com OpenAI</label>
       <input id="api-endpoint" type="url" value="https://openrouter.ai/api/v1/chat/completions" placeholder="https://.../chat/completions">
       <label for="api-model">Modelo</label>
-      <input id="api-model" value="deepseek/deepseek-chat-v3-0324:free" placeholder="provedor/modelo">
+      <input id="api-model" placeholder="provedor/modelo">
       <label for="api-key">Chave da API</label>
       <input id="api-key" type="password" autocomplete="off" placeholder="sk-or-v1-...">
       <div><button id="cancel-api" type="button">Cancelar</button><button id="save-api" class="save-api" type="button">Usar nesta sessão</button></div>
