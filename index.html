@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#070a0e">
+  <title>Servidor Master — Centro de Comando</title>
+  <meta name="description" content="Centro de comando e monitoramento da VPS Windows.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main id="login-screen" class="login-shell">
+    <div class="ambient-grid" aria-hidden="true"></div>
+    <section id="login-panel" class="login-panel" aria-labelledby="login-title">
+      <div class="brand-mark" aria-hidden="true"><span>SM</span></div>
+      <div class="login-heading">
+        <p class="eyebrow">Acesso remoto seguro</p>
+        <h1 id="login-title">Servidor <em>Master</em></h1>
+        <p>Centro de Comando</p>
+      </div>
+      <form id="login-form" class="login-form">
+        <label for="email">E-mail autorizado</label>
+        <div class="password-wrap"><span aria-hidden="true">@</span><input id="email" type="email" placeholder="seu@email.com" autocomplete="username" required></div>
+        <label for="password">Senha de acesso</label>
+        <div class="password-wrap"><span aria-hidden="true">›_</span><input id="password" type="password" placeholder="Digite sua senha" autocomplete="current-password" autofocus></div>
+        <button type="submit">Acessar sistema <span aria-hidden="true">→</span></button>
+        <button id="signup-button" class="signup-button" type="button">Criar primeiro acesso</button>
+        <p id="login-error" class="access-denied" role="alert" aria-live="assertive">&nbsp;</p>
+      </form>
+      <div class="login-foot"><span><i class="pulse-dot"></i>Canal criptografado</span><span>VPS • BRASIL</span></div>
+    </section>
+  </main>
+
+  <main id="command-screen" class="command-shell" hidden>
+    <header class="command-header">
+      <div class="header-brand"><div class="brand-mark brand-mark-small" aria-hidden="true"><span>SM</span></div><div><p>Servidor Master</p><span>Centro de Comando</span></div></div>
+      <div class="connection-state"><span class="pulse-dot"></span>Conexão segura</div>
+      <button id="logout-button" class="logout-button" type="button">Sair</button>
+    </header>
+
+    <div class="command-layout">
+      <aside class="metrics-panel" aria-label="Status ao vivo">
+        <div class="panel-heading"><div><p class="eyebrow">Telemetria</p><h2>Status ao vivo</h2></div><span class="live-label"><span class="pulse-dot"></span>Live</span></div>
+        <div class="metrics-grid">
+          <div class="metric-card"><span>CPU</span><strong><b id="cpu-value">18</b><small>%</small></strong><div class="meter"><i id="cpu-meter" style="width:18%"></i></div></div>
+          <div class="metric-card"><span>Memória RAM</span><strong><b id="ram-value">47</b><small>%</small></strong><div class="meter"><i id="ram-meter" style="width:47%"></i></div></div>
+          <div class="metric-card"><span>Disco</span><strong><b id="disk-value">62</b><small>% usado</small></strong><div class="meter"><i id="disk-meter" style="width:62%"></i></div></div>
+          <div class="metric-card robot-card"><span>Status do robô</span><strong id="robot-status"><i class="pulse-dot"></i>Online</strong><small>Mordomo operacional</small></div>
+        </div>
+        <div class="system-tape"><span>Último ciclo</span><strong>sem falhas</strong><time>há 2 min</time></div>
+      </aside>
+
+      <section class="chat-panel" aria-label="Chat com o Mordomo">
+        <div class="chat-heading"><div class="robot-avatar" aria-hidden="true">M</div><div><h2>Mordomo</h2><p><span class="pulse-dot"></span>online e monitorando</p></div><span class="session-id">SESSÃO 01</span></div>
+        <div id="messages" class="messages" aria-live="polite">
+          <div class="day-divider"><span>Hoje</span></div>
+          <article class="message-row agent"><div class="message-avatar" aria-hidden="true">M</div><div class="message-bubble"><p>Centro de comando online. CertPonto, Power BI e Mordomo estão sob monitoramento.</p><time>agora</time></div></article>
+        </div>
+        <div class="composer-area">
+          <div class="quick-actions" aria-label="Ações rápidas">
+            <button type="button" data-command="Gerar o relatório diário consolidado."><span>▥</span>Relatório diário</button>
+            <button type="button" data-command="Verificar o status completo do servidor."><span>◉</span>Status do servidor</button>
+            <button type="button" data-command="Checar as sessões do CertPonto e Power BI."><span>⌕</span>Checar login</button>
+            <button type="button" class="danger-action" data-danger="true" data-command="Reiniciar a automação principal."><span>↻</span>Reiniciar automação</button>
+          </div>
+          <form id="composer" class="composer"><span class="prompt-symbol" aria-hidden="true">›</span><input id="message-input" placeholder="Digite um comando para o Mordomo..." aria-label="Mensagem"><button id="send-button" type="submit" aria-label="Enviar mensagem">➤</button></form>
+          <p class="simulation-note">Modo demonstração • dados simulados até conectar a API</p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div id="confirm-modal" class="modal-backdrop" role="presentation" hidden>
+    <section class="confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title">
+      <div class="warning-mark" aria-hidden="true">!</div><p class="eyebrow">Ação sensível</p><h2 id="confirm-title">Reiniciar a automação?</h2>
+      <p>O serviço ficará indisponível por alguns segundos. As tarefas em execução poderão ser interrompidas.</p>
+      <div><button id="cancel-restart" type="button">Cancelar</button><button id="confirm-restart" class="confirm-danger" type="button">Confirmar reinício</button></div>
+    </section>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
+
