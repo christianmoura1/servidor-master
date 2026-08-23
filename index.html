@@ -54,7 +54,12 @@
       </aside>
 
       <section class="chat-panel" aria-label="Chat com o Mordomo">
-        <div class="chat-heading"><div class="robot-avatar" aria-hidden="true">M</div><div><h2>Mordomo</h2><p><span class="pulse-dot"></span>online e monitorando</p></div><span class="session-id">SESSÃO 01</span></div>
+        <div class="chat-heading"><div id="assistant-avatar" class="robot-avatar" aria-hidden="true">H</div><div><h2 id="assistant-name">Hermes</h2><p id="assistant-state"><span class="pulse-dot"></span>pronto para conversar</p></div><button id="api-settings" class="api-settings" type="button">Configurar API</button></div>
+        <nav class="agent-switcher" aria-label="Escolher agente">
+          <button type="button" class="active" data-provider="hermes"><span>H</span>Hermes</button>
+          <button type="button" data-provider="claude"><span>C</span>Claude Code</button>
+          <button type="button" data-provider="external"><span>↗</span>API externa</button>
+        </nav>
         <div id="messages" class="messages" aria-live="polite">
           <div class="day-divider"><span>Hoje</span></div>
           <article class="message-row agent"><div class="message-avatar" aria-hidden="true">M</div><div class="message-bubble"><p>Centro de comando online. CertPonto, Power BI e Mordomo estão sob monitoramento.</p><time>agora</time></div></article>
@@ -67,7 +72,7 @@
             <button type="button" class="danger-action" data-danger="true" data-command="Reiniciar a automação principal."><span>↻</span>Reiniciar automação</button>
           </div>
           <form id="composer" class="composer"><span class="prompt-symbol" aria-hidden="true">›</span><input id="message-input" placeholder="Digite um comando para o Mordomo..." aria-label="Mensagem"><button id="send-button" type="submit" aria-label="Enviar mensagem">➤</button></form>
-          <p class="simulation-note">Modo demonstração • dados simulados até conectar a API</p>
+          <p id="connection-note" class="simulation-note">Hermes • configure o OpenRouter para iniciar</p>
         </div>
       </section>
     </div>
@@ -80,9 +85,21 @@
       <div><button id="cancel-restart" type="button">Cancelar</button><button id="confirm-restart" class="confirm-danger" type="button">Confirmar reinício</button></div>
     </section>
   </div>
+  <div id="api-modal" class="modal-backdrop" role="presentation" hidden>
+    <section class="confirm-modal api-modal" role="dialog" aria-modal="true" aria-labelledby="api-title">
+      <div class="warning-mark api-mark" aria-hidden="true">↗</div><p class="eyebrow">Conexão segura</p><h2 id="api-title">Configurar provedor</h2>
+      <p>A chave fica apenas na memória desta aba. Ao fechar ou atualizar, será necessário informá-la novamente.</p>
+      <label for="api-endpoint">Endpoint compatível com OpenAI</label>
+      <input id="api-endpoint" type="url" value="https://openrouter.ai/api/v1/chat/completions" placeholder="https://.../chat/completions">
+      <label for="api-model">Modelo</label>
+      <input id="api-model" value="deepseek/deepseek-chat-v3-0324:free" placeholder="provedor/modelo">
+      <label for="api-key">Chave da API</label>
+      <input id="api-key" type="password" autocomplete="off" placeholder="sk-or-v1-...">
+      <div><button id="cancel-api" type="button">Cancelar</button><button id="save-api" class="save-api" type="button">Usar nesta sessão</button></div>
+    </section>
+  </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
   <script src="config.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
-
