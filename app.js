@@ -9,8 +9,11 @@ const messages = document.querySelector('#messages');
 const input = document.querySelector('#message-input');
 const sendButton = document.querySelector('#send-button');
 const modal = document.querySelector('#confirm-modal');
+const apiModal = document.querySelector('#api-modal');
 let isTyping = false;
 let pendingCommand = '';
+let activeProvider = 'hermes';
+let externalConfig = { endpoint: '', model: '', apiKey: '' };
 
 const emailInput = document.querySelector('#email');
 const passwordInput = document.querySelector('#password');
@@ -111,6 +114,49 @@ document.querySelectorAll('[data-command]').forEach((button) => {
   });
 });
 
+document.querySelectorAll('[data-provider]').forEach((button) => {
+  button.addEventListener('click', () => selectProvider(button.dataset.provider));
+});
+
+document.querySelector('#api-settings').addEventListener('click', openApiModal);
+document.querySelector('#cancel-api').addEventListener('click', closeApiModal);
+apiModal.addEventListener('click', (event) => { if (event.target === apiModal) closeApiModal(); });
+document.querySelector('#save-api').addEventListener('click', () => {
+  const endpoint = document.querySelector('#api-endpoint').value.trim();
+  const model = document.querySelector('#api-model').value.trim();
+  const apiKey = document.querySelector('#api-key').value.trim();
+  if (!endpoint.startsWith('https://') || !model || !apiKey) {
+    document.querySelector('#api-key').focus();
+    return;
+  }
+  externalConfig = { endpoint, model, apiKey };
+  closeApiModal();
+  selectProvider(activeProvider === 'claude' ? 'external' : activeProvider);
+});
+
+function selectProvider(provider) {
+  activeProvider = provider;
+  const labels = {
+    hermes: ['Hermes', 'H', externalConfig.apiKey ? 'OpenRouter configurado' : 'configure o OpenRouter para iniciar'],
+    claude: ['Claude Code', 'C', 'conversa via Claude • execução VPS pendente'],
+    external: ['API externa', '↗', externalConfig.apiKey ? `${externalConfig.model} conectado` : 'configure uma API compatível']
+  };
+  document.querySelectorAll('[data-provider]').forEach((button) => button.classList.toggle('active', button.dataset.provider === provider));
+  document.querySelector('#assistant-name').textContent = labels[provider][0];
+  document.querySelector('#assistant-avatar').textContent = labels[provider][1];
+  document.querySelector('#connection-note').textContent = labels[provider][2];
+  input.placeholder = `Mensagem para ${labels[provider][0]}...`;
+}
+
+function openApiModal() {
+  document.querySelector('#api-endpoint').value = externalConfig.endpoint || 'https://openrouter.ai/api/v1/chat/completions';
+  document.querySelector('#api-model').value = externalConfig.model || 'deepseek/deepseek-chat-v3-0324:free';
+  document.querySelector('#api-key').value = '';
+  apiModal.hidden = false;
+}
+
+function closeApiModal() { apiModal.hidden = true; }
+
 document.querySelector('#cancel-restart').addEventListener('click', closeModal);
 modal.addEventListener('click', (event) => { if (event.target === modal) closeModal(); });
 document.querySelector('#confirm-restart').addEventListener('click', () => {
@@ -128,7 +174,7 @@ function closeModal() {
  * Ponto central de integração do chat.
  * INTEGRAÇÃO: substitua o setTimeout por fetch('/api/chat', {...}).
  */
-function sendMessage(message = input.value) {
+async function sendMessage(message = input.value) {
   const cleanMessage = String(message).trim();
   if (!cleanMessage || isTyping) return;
 
@@ -136,13 +182,34 @@ function sendMessage(message = input.value) {
   input.value = '';
   setTyping(true);
 
-  window.setTimeout(() => {
-    const code = cleanMessage.toLowerCase().includes('status')
-      ? 'GET /api/status\n→ 200 OK\nrobot: online'
-      : '';
-    appendMessage('agent', 'Processando comando... A simulação foi concluída e o servidor está pronto para receber a integração com a API.', code);
+  try {
+    if ((activeProvider === 'hermes' || activeProvider === 'external') && !externalConfig.apiKey) {
+      throw new Error('Configure a API externa antes de conversar com este agente.');
+    }
+    const { data: sessionData } = await supabaseClient.auth.getSession();
+    if (!sessionData.session) throw new Error('Sua sessão expirou. Entre novamente.');
+
+    const response = await fetch(`${config.supabaseUrl}/functions/v1/servidor-master-chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: config.supabasePublishableKey,
+        Authorization: `Bearer ${sessionData.session.access_token}`
+      },
+      body: JSON.stringify({
+        provider: activeProvider,
+        message: cleanMessage,
+        external: activeProvider === 'claude' ? undefined : externalConfig
+      })
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Não foi possível consultar o agente.');
+    appendMessage('agent', result.message || 'Resposta vazia do agente.', result.code || '');
+  } catch (error) {
+    appendMessage('agent', `Não consegui concluir: ${error.message}`);
+  } finally {
     setTyping(false);
-  }, 1300);
+  }
 }
 
 function appendMessage(author, text, code = '') {
@@ -186,4 +253,3 @@ function currentTime() {
 
 // Disponibiliza a função para integrações externas e testes no console.
 window.sendMessage = sendMessage;
-
