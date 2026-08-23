@@ -1,0 +1,11 @@
+@import url('./app/globals.css');
+
+:root{--font-geist-sans:'Inter',Arial,sans-serif;--font-geist-mono:'JetBrains Mono',Consolas,monospace}
+[hidden]{display:none!important}
+.metric-card b{font:inherit}
+.quick-actions button span{flex:none}
+.login-form label+ .password-wrap{margin-bottom:14px}
+.signup-button{margin-top:8px!important;background:transparent!important;border:1px solid var(--line)!important;color:var(--muted)!important}
+.signup-button:hover{border-color:var(--green)!important;color:var(--text)!important}
+.login-form button:disabled{cursor:wait;opacity:.6}
+
