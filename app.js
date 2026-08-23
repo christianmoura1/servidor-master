@@ -13,7 +13,13 @@ const apiModal = document.querySelector('#api-modal');
 let isTyping = false;
 let pendingCommand = '';
 let activeProvider = 'hermes';
-let externalConfig = { endpoint: '', model: '', apiKey: '' };
+let externalConfig = (() => {
+  try {
+    return JSON.parse(sessionStorage.getItem('servidor-master-api') || 'null') || { endpoint: '', model: '', apiKey: '' };
+  } catch {
+    return { endpoint: '', model: '', apiKey: '' };
+  }
+})();
 
 const emailInput = document.querySelector('#email');
 const passwordInput = document.querySelector('#password');
@@ -130,6 +136,7 @@ document.querySelector('#save-api').addEventListener('click', () => {
     return;
   }
   externalConfig = { endpoint, model, apiKey };
+  sessionStorage.setItem('servidor-master-api', JSON.stringify(externalConfig));
   closeApiModal();
   selectProvider(activeProvider === 'claude' ? 'external' : activeProvider);
 });
@@ -150,7 +157,7 @@ function selectProvider(provider) {
 
 function openApiModal() {
   document.querySelector('#api-endpoint').value = externalConfig.endpoint || 'https://openrouter.ai/api/v1/chat/completions';
-  document.querySelector('#api-model').value = externalConfig.model || 'deepseek/deepseek-chat-v3-0324:free';
+  document.querySelector('#api-model').value = externalConfig.model || 'nvidia/nemotron-3-ultra-550b-a55b:free';
   document.querySelector('#api-key').value = '';
   apiModal.hidden = false;
 }
