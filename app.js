@@ -13,11 +13,16 @@ const apiModal = document.querySelector('#api-modal');
 let isTyping = false;
 let pendingCommand = '';
 let activeProvider = 'hermes';
-let externalConfig = (() => {
+const providerDefaults = {
+  hermes: { endpoint: 'https://openrouter.ai/api/v1/chat/completions', model: 'nvidia/nemotron-3-ultra-550b-a55b:free', apiKey: '' },
+  claude: { endpoint: 'https://api.anthropic.com/v1/messages', model: 'claude-sonnet-4-5', apiKey: '' },
+  external: { endpoint: '', model: '', apiKey: '' }
+};
+let providerConfigs = (() => {
   try {
-    return JSON.parse(sessionStorage.getItem('servidor-master-api') || 'null') || { endpoint: '', model: '', apiKey: '' };
+    return { ...providerDefaults, ...(JSON.parse(sessionStorage.getItem('servidor-master-apis-v2') || 'null') || {}) };
   } catch {
-    return { endpoint: '', model: '', apiKey: '' };
+    return structuredClone(providerDefaults);
   }
 })();
 
@@ -135,18 +140,19 @@ document.querySelector('#save-api').addEventListener('click', () => {
     document.querySelector('#api-key').focus();
     return;
   }
-  externalConfig = { endpoint, model, apiKey };
-  sessionStorage.setItem('servidor-master-api', JSON.stringify(externalConfig));
+  providerConfigs[activeProvider] = { endpoint, model, apiKey };
+  sessionStorage.setItem('servidor-master-apis-v2', JSON.stringify(providerConfigs));
   closeApiModal();
-  selectProvider(activeProvider === 'claude' ? 'external' : activeProvider);
+  selectProvider(activeProvider);
 });
 
 function selectProvider(provider) {
   activeProvider = provider;
+  const current = providerConfigs[provider];
   const labels = {
-    hermes: ['Hermes', 'H', externalConfig.apiKey ? 'OpenRouter configurado' : 'configure o OpenRouter para iniciar'],
-    claude: ['Claude Code', 'C', 'conversa via Claude • execução VPS pendente'],
-    external: ['API externa', '↗', externalConfig.apiKey ? `${externalConfig.model} conectado` : 'configure uma API compatível']
+    hermes: ['Hermes', 'H', current.apiKey ? `OpenRouter • ${current.model}` : 'configure o OpenRouter para iniciar'],
+    claude: ['Claude Code', 'C', current.apiKey ? `Anthropic • ${current.model} • execução VPS pendente` : 'configure a Anthropic • execução VPS pendente'],
+    external: ['API externa', '↗', current.apiKey ? `${current.model} conectado` : 'configure uma API compatível']
   };
   document.querySelectorAll('[data-provider]').forEach((button) => button.classList.toggle('active', button.dataset.provider === provider));
   document.querySelector('#assistant-name').textContent = labels[provider][0];
@@ -156,9 +162,14 @@ function selectProvider(provider) {
 }
 
 function openApiModal() {
-  document.querySelector('#api-endpoint').value = externalConfig.endpoint || 'https://openrouter.ai/api/v1/chat/completions';
-  document.querySelector('#api-model').value = externalConfig.model || 'nvidia/nemotron-3-ultra-550b-a55b:free';
+  const current = providerConfigs[activeProvider];
+  const names = { hermes: 'Hermes / OpenRouter', claude: 'Claude / Anthropic', external: 'API externa' };
+  document.querySelector('#api-title').textContent = `Configurar ${names[activeProvider]}`;
+  document.querySelector('#api-endpoint-label').textContent = activeProvider === 'claude' ? 'Endpoint da Anthropic' : 'Endpoint compatível com OpenAI';
+  document.querySelector('#api-endpoint').value = current.endpoint;
+  document.querySelector('#api-model').value = current.model;
   document.querySelector('#api-key').value = '';
+  document.querySelector('#api-key').placeholder = activeProvider === 'hermes' ? 'sk-or-v1-...' : 'Cole a chave deste provedor';
   apiModal.hidden = false;
 }
 
@@ -190,8 +201,9 @@ async function sendMessage(message = input.value) {
   setTyping(true);
 
   try {
-    if ((activeProvider === 'hermes' || activeProvider === 'external') && !externalConfig.apiKey) {
-      throw new Error('Configure a API externa antes de conversar com este agente.');
+    const activeConfig = providerConfigs[activeProvider];
+    if (!activeConfig.apiKey) {
+      throw new Error(`Configure a API de ${activeProvider === 'claude' ? 'Claude' : activeProvider === 'hermes' ? 'Hermes' : 'API externa'} antes de conversar.`);
     }
     const { data: sessionData } = await supabaseClient.auth.getSession();
     if (!sessionData.session) throw new Error('Sua sessão expirou. Entre novamente.');
@@ -206,7 +218,7 @@ async function sendMessage(message = input.value) {
       body: JSON.stringify({
         provider: activeProvider,
         message: cleanMessage,
-        external: activeProvider === 'claude' ? undefined : externalConfig
+        external: activeConfig
       })
     });
     const result = await response.json();
