@@ -12,6 +12,7 @@ const modal = document.querySelector('#confirm-modal');
 const apiModal = document.querySelector('#api-modal');
 let isTyping = false;
 let pendingCommand = '';
+let pendingApproval = null;
 let activeProvider = 'hermes';
 const providerDefaults = {
   hermes: { endpoint: 'https://openrouter.ai/api/v1/chat/completions', model: 'nvidia/nemotron-3-ultra-550b-a55b:free', apiKey: '' },
@@ -118,6 +119,8 @@ document.querySelectorAll('[data-command]').forEach((button) => {
   button.addEventListener('click', () => {
     if (button.dataset.danger) {
       pendingCommand = button.dataset.command;
+      pendingApproval = null;
+      setConfirmationCopy('Reiniciar a automação?', 'O serviço ficará indisponível por alguns segundos. As tarefas em execução poderão ser interrompidas.', 'Confirmar reinício');
       modal.hidden = false;
       document.querySelector('#cancel-restart').focus();
       return;
@@ -179,6 +182,12 @@ function closeApiModal() { apiModal.hidden = true; }
 document.querySelector('#cancel-restart').addEventListener('click', closeModal);
 modal.addEventListener('click', (event) => { if (event.target === modal) closeModal(); });
 document.querySelector('#confirm-restart').addEventListener('click', () => {
+  if (pendingApproval) {
+    const approval = pendingApproval;
+    closeModal();
+    executeApprovedCommand(approval);
+    return;
+  }
   const command = pendingCommand;
   closeModal();
   sendMessage(command);
@@ -186,7 +195,14 @@ document.querySelector('#confirm-restart').addEventListener('click', () => {
 
 function closeModal() {
   pendingCommand = '';
+  pendingApproval = null;
   modal.hidden = true;
+}
+
+function setConfirmationCopy(title, description, buttonLabel) {
+  document.querySelector('#confirm-title').textContent = title;
+  document.querySelector('#confirm-description').textContent = description;
+  document.querySelector('#confirm-restart').textContent = buttonLabel;
 }
 
 /**
@@ -225,8 +241,43 @@ async function sendMessage(message = input.value) {
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || 'Não foi possível consultar o agente.');
     appendMessage('agent', result.message || 'Resposta vazia do agente.', result.code || '');
+    if (result.approval) {
+      pendingApproval = result.approval;
+      setConfirmationCopy(
+        `Executar comando em ${result.approval.shell === 'cmd' ? 'CMD' : 'PowerShell'}?`,
+        result.approval.command,
+        'Executar no servidor'
+      );
+      modal.hidden = false;
+      document.querySelector('#cancel-restart').focus();
+    }
   } catch (error) {
     appendMessage('agent', `Não consegui concluir: ${error.message}`);
+  } finally {
+    setTyping(false);
+  }
+}
+
+async function executeApprovedCommand(approval) {
+  setTyping(true);
+  try {
+    const { data } = await supabaseClient.auth.getSession();
+    if (!data.session) throw new Error('Sua sessão expirou. Entre novamente.');
+    const response = await fetch(`${config.supabaseUrl}/functions/v1/servidor-master-chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: config.supabasePublishableKey,
+        Authorization: `Bearer ${data.session.access_token}`
+      },
+      body: JSON.stringify({ action: 'execute-command', approvalId: approval.approvalId })
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'O comando foi recusado.');
+    appendMessage('agent', result.message, result.code || '');
+    refreshTelemetry();
+  } catch (error) {
+    appendMessage('agent', `Não consegui executar: ${error.message}`);
   } finally {
     setTyping(false);
   }
