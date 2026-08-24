@@ -84,6 +84,7 @@ function showCommandCenter() {
   commandScreen.hidden = false;
   loginError.innerHTML = '&nbsp;';
   input.focus();
+  refreshTelemetry();
 }
 
 function denyAccess(message) {
@@ -202,7 +203,7 @@ async function sendMessage(message = input.value) {
 
   try {
     const activeConfig = providerConfigs[activeProvider];
-    if (!activeConfig.apiKey) {
+    if (!activeConfig.apiKey && !(activeProvider === 'hermes' && isTelemetryMessage(cleanMessage))) {
       throw new Error(`Configure a API de ${activeProvider === 'claude' ? 'Claude' : activeProvider === 'hermes' ? 'Hermes' : 'API externa'} antes de conversar.`);
     }
     const { data: sessionData } = await supabaseClient.auth.getSession();
@@ -228,6 +229,43 @@ async function sendMessage(message = input.value) {
     appendMessage('agent', `Não consegui concluir: ${error.message}`);
   } finally {
     setTyping(false);
+  }
+}
+
+const telemetryTerms = ['memoria', 'memória', 'ram', 'cpu', 'processador', 'disco', 'servidor', 'vps', 'telemetria', 'status'];
+
+function isTelemetryMessage(message) {
+  const normalized = String(message).toLowerCase();
+  return telemetryTerms.some((term) => normalized.includes(term));
+}
+
+async function refreshTelemetry() {
+  try {
+    const { data } = await supabaseClient.auth.getSession();
+    if (!data.session) return;
+    const response = await fetch(`${config.supabaseUrl}/functions/v1/servidor-master-chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: config.supabasePublishableKey,
+        Authorization: `Bearer ${data.session.access_token}`
+      },
+      body: JSON.stringify({ provider: 'hermes', message: 'telemetria do servidor' })
+    });
+    const result = await response.json();
+    if (!response.ok || !result.telemetry) return;
+    const values = {
+      cpu: Math.round(result.telemetry.cpu.percent),
+      ram: Math.round(result.telemetry.memory.percent),
+      disk: Math.round(result.telemetry.disk.percent)
+    };
+    for (const [name, value] of Object.entries(values)) {
+      document.querySelector(`#${name}-value`).textContent = value;
+      document.querySelector(`#${name}-meter`).style.width = `${value}%`;
+    }
+    document.querySelector('#robot-status').innerHTML = '<i class="pulse-dot"></i>Online';
+  } catch {
+    document.querySelector('#robot-status').innerHTML = '<i class="pulse-dot offline"></i>Offline';
   }
 }
 
