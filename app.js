@@ -232,7 +232,10 @@ async function sendMessage(message = input.value) {
   }
 }
 
-const telemetryTerms = ['memoria', 'memória', 'ram', 'cpu', 'processador', 'disco', 'servidor', 'vps', 'telemetria', 'status'];
+const telemetryTerms = [
+  'memoria', 'memória', 'ram', 'cpu', 'processador', 'disco', 'servidor', 'vps', 'telemetria', 'status',
+  'projeto', 'projetos', 'certponto', 'relatório de ponto', 'relatorio de ponto', 'banco de horas', 'ponto da equipe'
+];
 
 function isTelemetryMessage(message) {
   const normalized = String(message).toLowerCase();
@@ -310,3 +313,4 @@ function currentTime() {
 
 // Disponibiliza a função para integrações externas e testes no console.
 window.sendMessage = sendMessage;
+
